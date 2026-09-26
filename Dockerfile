@@ -1,20 +1,14 @@
-FROM --platform=${BUILDPLATFORM} node:24@sha256:8530f76a96d88820d288761f022e318970dda93d01536919fbc16076b7983e63 AS build
+# 階段一：向官方鏡像「借」已經編譯好的精美網頁檔案
+FROM excalidraw/excalidraw:latest AS official_source
 
-WORKDIR /opt/node_app
+# 階段二：建立你專屬的超輕量網頁伺服器（Alpine 版本記憶體只佔約 10MB）
+FROM nginx:alpine
 
-COPY . .
+# 核心關鍵：把官方網頁檔案複製到你新容器的網頁根目錄
+COPY --from=official_source /usr/share/nginx/html /usr/share/nginx/html
 
-# do not ignore optional dependencies:
-# Error: Cannot find module @rollup/rollup-linux-x64-gnu
-RUN --mount=type=cache,target=/root/.cache/yarn \
-    npm_config_target_arch=${TARGETARCH} yarn --frozen-lockfile --network-timeout 600000
+# 開放 80 連接埠
+EXPOSE 80
 
-ARG NODE_ENV=production
-
-RUN npm_config_target_arch=${TARGETARCH} yarn build:app:docker
-
-FROM nginx:stable-alpine-slim@sha256:2c605dbeab79a6b2a63340474fe58119d0ef95bdc4b1f41df0aa689659b3d13b
-
-COPY --from=build /opt/node_app/excalidraw-app/build /usr/share/nginx/html
-
-HEALTHCHECK CMD wget -q -O /dev/null http://localhost || exit 1
+# 啟動 Nginx 伺服器
+CMD ["nginx", "-g", "daemon off;"]
