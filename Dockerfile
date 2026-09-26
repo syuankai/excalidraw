@@ -7,8 +7,8 @@ FROM nginx:alpine
 # 核心關鍵：把官方網頁檔案複製到你新容器的網頁根目錄
 COPY --from=official_source /usr/share/nginx/html /usr/share/nginx/html
 
-# 開放 80 連接埠
-EXPOSE 80
+# 開放 3000 連接埠
+EXPOSE 3000
 
 # 啟動 Nginx 伺服器
 CMD ["nginx", "-g", "daemon off;"]
